@@ -90,6 +90,10 @@ namespace RESTfulAPI
 				cfg.CreateMap<AuthorForCreationDto, Author>();
 
 				cfg.CreateMap<BookForCreationDto, Book>();
+
+				cfg.CreateMap<BookForUpdateDto, Book>();
+
+				cfg.CreateMap<Book, BookForUpdateDto>();
 			});
 
 			app.UseMvc();
