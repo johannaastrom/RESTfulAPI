@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using Microsoft.AspNetCore.JsonPatch;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 using RESTfulAPI.Entities;
 using RESTfulAPI.Models;
 using RESTfulAPI.Services;
@@ -16,10 +17,12 @@ namespace RESTfulAPI.Controllers
 	public class BooksController : Controller
 	{
 		private ILibraryRepository _libraryRepository;
+		private ILogger<BooksController> _Logger;
 
-		public BooksController(ILibraryRepository libraryRepository)
+		public BooksController(ILibraryRepository libraryRepository, ILogger<BooksController> logger)
 		{
 			_libraryRepository = libraryRepository;
+			_Logger = logger;
 		}
 
 		[HttpGet()]
@@ -56,6 +59,12 @@ namespace RESTfulAPI.Controllers
 			if (book == null)
 				return BadRequest();
 
+			if(book.Description == book.Title)
+				ModelState.AddModelError(nameof(BookForUpdateDto), "The provided description should be different from the title.");
+
+			if (!ModelState.IsValid)
+				return new UnprocessableEntityObjectResult(ModelState);
+
 			if (!_libraryRepository.AuthorExists(authorId))
 				return NotFound();
 
@@ -86,6 +95,8 @@ namespace RESTfulAPI.Controllers
 
 			if (!_libraryRepository.Save())
 				throw new Exception($"Deleting book {id} for author {authorId} failed on save.");
+
+			_Logger.LogInformation(100, $"Book {id} for author {authorId} was deleted.");
 
 			return NoContent();
 		}
@@ -140,7 +151,15 @@ namespace RESTfulAPI.Controllers
 			if (bookForAuthorFromRepo == null)
 			{
 				var bookDto = new BookForUpdateDto();
-				patchDoc.ApplyTo(bookDto);
+				patchDoc.ApplyTo(bookDto, ModelState);
+
+				if (bookDto.Description == bookDto.Title)
+					ModelState.AddModelError(nameof(BookForUpdateDto), "The provided description should be different from the title.");
+
+				TryValidateModel(bookDto);
+
+				if (!ModelState.IsValid)
+					return new UnprocessableEntityObjectResult(ModelState);
 
 				var bookToAdd = Mapper.Map<Book>(bookDto);
 				bookToAdd.Id = id;
@@ -157,9 +176,17 @@ namespace RESTfulAPI.Controllers
 
 			var bookToPatch = Mapper.Map<BookForUpdateDto>(bookForAuthorFromRepo);
 
+			//patchDoc.ApplyTo(bookToPatch, ModelState);
+
 			patchDoc.ApplyTo(bookToPatch);
 
-			//add validation
+			if (bookToPatch.Description == bookToPatch.Title)
+				ModelState.AddModelError(nameof(BookForUpdateDto), "The provided description should be different from the title.");
+
+			TryValidateModel(bookToPatch);
+
+			if (!ModelState.IsValid)	
+				return new UnprocessableEntityObjectResult(ModelState);
 
 			Mapper.Map(bookToPatch, bookForAuthorFromRepo);
 
