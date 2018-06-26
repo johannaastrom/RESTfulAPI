@@ -1,4 +1,5 @@
 ﻿using RESTfulAPI.Entities;
+using RESTfulAPI.Helpers;
 using System;
 using System.Collections.Generic;
 
@@ -6,7 +7,7 @@ namespace RESTfulAPI.Services
 {
     public interface ILibraryRepository
     {
-        IEnumerable<Author> GetAuthors();
+        PagedList<Author> GetAuthors(AuthorsResourceParameters authorsResourceParameters);
         Author GetAuthor(Guid authorId);
         IEnumerable<Author> GetAuthors(IEnumerable<Guid> authorIds);
         void AddAuthor(Author author);
