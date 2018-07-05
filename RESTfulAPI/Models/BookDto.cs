@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 
 namespace RESTfulAPI.Models
 {
-    public class BookDto
+    public class BookDto : LinkedResourceBaseDto
     {
 		public Guid Id { get; set; }
 
